@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { LanguageToggle } from './components/LanguageToggle';
-import { LoginScreen } from './components/LoginScreen';
 import { Dashboard } from './components/Dashboard';
 import { Sidebar } from './components/Sidebar';
 import { LiveCapture } from './components/LiveCapture';
@@ -11,17 +10,12 @@ import { KnowledgeBase } from './components/KnowledgeBase';
 import { StakeholderCRM } from './components/StakeholderCRM';
 import { ManualCapture } from './components/ManualCapture';
 
-type AppState = 'login' | 'dashboard';
 type ViewState = 'dashboard' | 'live-capture' | 'manual-capture' | 'insights' | 'charter-builder' | 'knowledge-base' | 'sessions' | 'stakeholders';
 
 export default function App() {
-  const [appState, setAppState] = useState<AppState>('login');
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [language, setLanguage] = useState<'EN' | 'ES'>('EN');
 
-  const handleLogin = () => {
-    setAppState('dashboard');
-  };
 
   const handleLanguageToggle = (lang: 'EN' | 'ES') => {
     setLanguage(lang);
@@ -31,21 +25,7 @@ export default function App() {
     setCurrentView(view as ViewState);
   };
 
-  const handleLogout = () => {
-    setAppState('login');
-    setCurrentView('dashboard');
-  };
 
-  if (appState === 'login') {
-    return (
-      <div className="min-h-screen">
-        <Header>
-          <LanguageToggle language={language} onToggle={handleLanguageToggle} />
-        </Header>
-        <LoginScreen onLogin={handleLogin} language={language} />
-      </div>
-    );
-  }
 
   const renderMainContent = () => {
     switch (currentView) {
@@ -84,7 +64,6 @@ export default function App() {
           currentView={currentView} 
           onViewChange={handleViewChange} 
           language={language}
-          onLogout={handleLogout}
         />
         <main className="flex-1 overflow-hidden">
           {renderMainContent()}

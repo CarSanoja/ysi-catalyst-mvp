@@ -1,15 +1,14 @@
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
-import { BarChart3, Home, Mic, Lightbulb, Users, Calendar, FileText, Brain, LogOut, Upload } from "lucide-react";
+import { BarChart3, Home, Mic, Lightbulb, Users, Calendar, FileText, Brain, Upload } from "lucide-react";
 
 interface SidebarProps {
   currentView: string;
   onViewChange: (view: string) => void;
   language: 'EN' | 'ES';
-  onLogout: () => void;
 }
 
-export function Sidebar({ currentView, onViewChange, language, onLogout }: SidebarProps) {
+export function Sidebar({ currentView, onViewChange, language }: SidebarProps) {
   const text = {
     EN: {
       dashboard: 'Dashboard',
@@ -20,7 +19,6 @@ export function Sidebar({ currentView, onViewChange, language, onLogout }: Sideb
       manualCapture: 'Manual Capture',
       sessions: 'Sessions',
       stakeholders: 'Stakeholders',
-      logout: 'Logout'
     },
     ES: {
       dashboard: 'Panel Principal',
@@ -31,7 +29,6 @@ export function Sidebar({ currentView, onViewChange, language, onLogout }: Sideb
       manualCapture: 'Captura Manual',
       sessions: 'Sesiones',
       stakeholders: 'Interesados',
-      logout: 'Cerrar Sesión'
     }
   };
 
@@ -85,16 +82,6 @@ export function Sidebar({ currentView, onViewChange, language, onLogout }: Sideb
           })}
         </div>
 
-        <Separator className="my-4" />
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start h-10 text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={onLogout}
-        >
-          <LogOut className="w-4 h-4 mr-3" />
-          {t.logout}
-        </Button>
       </nav>
 
       {/* Session Status Indicator */}

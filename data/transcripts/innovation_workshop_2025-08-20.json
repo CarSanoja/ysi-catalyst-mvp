@@ -1,0 +1,85 @@
+{
+  "session_info": {
+    "title": "Innovation Workshop - Youth Climate Solutions",
+    "date": "2025-08-20",
+    "type": "workshop",
+    "duration_minutes": 120,
+    "participants": [
+      {"name": "Ana Silva", "role": "Workshop Facilitator"},
+      {"name": "David Kim", "role": "Climate Tech Expert"},
+      {"name": "Sofia Patel", "role": "Young Innovator"},
+      {"name": "Miguel Torres", "role": "Sustainability Consultant"}
+    ]
+  },
+  "transcript": [
+    {
+      "timestamp": "10:00",
+      "speaker": "Ana Silva",
+      "text": "Welcome everyone to our Innovation Workshop focused on youth-led climate solutions. Today we'll explore how young innovators are tackling environmental challenges."
+    },
+    {
+      "timestamp": "10:02", 
+      "speaker": "David Kim",
+      "text": "Climate technology is advancing rapidly, but we need more young voices in the conversation. The funding gap for climate startups is still significant - about 2 billion euros globally."
+    },
+    {
+      "timestamp": "10:05",
+      "speaker": "Sofia Patel", 
+      "text": "As a young entrepreneur, I can confirm that funding is our biggest barrier. My renewable energy project needs 200K euros to reach the next milestone, but traditional investors don't understand our vision."
+    },
+    {
+      "timestamp": "10:08",
+      "speaker": "Miguel Torres",
+      "text": "That's where programs like YSI become crucial. We need to create ecosystems that support young innovators not just with money, but with mentorship and recognition."
+    },
+    {
+      "timestamp": "10:12",
+      "speaker": "Ana Silva",
+      "text": "Let's dive deeper into the three pillars: Capital, Recognition, and Wellbeing. Sofia, how has the lack of capital affected your project timeline?"
+    },
+    {
+      "timestamp": "10:15",
+      "speaker": "Sofia Patel",
+      "text": "Without proper funding, I've had to bootstrap everything. My wellbeing has suffered - working 80-hour weeks isn't sustainable. Recognition would help attract investors."
+    },
+    {
+      "timestamp": "10:18",
+      "speaker": "David Kim",
+      "text": "This highlights the interconnected nature of the three pillars. Success requires all three working together - capital enables innovation, recognition attracts more capital, and wellbeing ensures sustainable growth."
+    },
+    {
+      "timestamp": "10:25",
+      "speaker": "Miguel Torres",
+      "text": "For the action items, I suggest we create a climate-focused track within YSI, with dedicated funding and mentorship for environmental solutions."
+    },
+    {
+      "timestamp": "10:30",
+      "speaker": "Ana Silva",
+      "text": "Excellent idea. Let's also establish partnerships with climate VCs and organize a specific showcase for environmental innovations."
+    }
+  ],
+  "topics_discussed": [
+    "climate technology funding",
+    "youth entrepreneurship barriers", 
+    "three pillars integration",
+    "startup sustainability",
+    "environmental innovation showcase"
+  ],
+  "action_items": [
+    {
+      "item": "Create climate-focused track within YSI",
+      "assignee": "Miguel Torres",
+      "due_date": "2025-09-15"
+    },
+    {
+      "item": "Establish climate VC partnerships", 
+      "assignee": "Ana Silva",
+      "due_date": "2025-09-30"
+    },
+    {
+      "item": "Organize environmental innovation showcase",
+      "assignee": "David Kim", 
+      "due_date": "2025-10-15"
+    }
+  ]
+}

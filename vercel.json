@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd ysi-admin-frontend && npm install && npm run build",
+  "outputDirectory": "ysi-admin-frontend/dist",
+  "installCommand": "cd ysi-admin-frontend && npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

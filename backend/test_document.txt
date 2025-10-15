@@ -1,0 +1,14 @@
+YSI RAGFlow Integration Test Document
+=====================================
+
+This is a test document for the YSI-RAGFlow integration.
+
+Key Features:
+- Seamless integration between YSI Backend and RAGFlow
+- JWT authentication for secure access
+- Knowledge Base management
+- Document upload and processing
+- AI-powered search and chat capabilities
+
+Test Date: September 24, 2025
+Status: Integration Successful!

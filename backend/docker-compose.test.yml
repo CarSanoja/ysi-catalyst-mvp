@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: ysi-postgres
+    environment:
+      POSTGRES_DB: ysi_db
+      POSTGRES_USER: ysi_user
+      POSTGRES_PASSWORD: ysi_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ysi_user -d ysi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ysi-backend:
+    build: .
+    container_name: ysi-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ysi_user:ysi_password@postgres:5432/ysi_db
+      - SECRET_KEY=ysi-test-secret-key
+      - RAGFLOW_API_URL=http://host.docker.internal:9380/api
+      - RAGFLOW_WEB_URL=http://host.docker.internal:9381
+      - RAGFLOW_API_TOKEN=ragflow-ab5579c6-6728-45b6-9b1c-151375258e43
+      - RAGFLOW_TENANT_ID=e5a98b6495d011f098bd7a5d01274a94
+      - RAGFLOW_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+volumes:
+  postgres_data:

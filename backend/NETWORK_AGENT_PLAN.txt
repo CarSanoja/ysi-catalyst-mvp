@@ -1,0 +1,165 @@
+PLAN: NETWORK ANALYSIS AGENT - PROCESAMIENTO PARALELO
+========================================================
+
+OBJETIVO:
+Crear un agente especializado para extraer redes de stakeholders y relaciones de forma paralela al agente principal de insights YSI.
+
+ARQUITECTURA PROPUESTA:
+======================
+
+1. AGENTE PRINCIPAL (InsightExtractionAgent)
+   - Responsabilidades: Análisis de pilares YSI + insights generales
+   - Archivo: app/utils/langraph/insight_agent.py (YA EXISTE)
+   - Schema: ExtractedInsightSchemaExpanded (YA EXISTE)
+
+2. NUEVO AGENTE DE REDES (NetworkAnalysisAgent)
+   - Responsabilidades: Extracción de stakeholders, relaciones y redes temáticas
+   - Archivo: app/utils/langraph/network_agent.py (CREAR NUEVO)
+   - Schema: NetworkAnalysisSchema (CREAR NUEVO)
+
+3. ORCHESTRATOR (MODIFICAR)
+   - Ejecuta ambos agentes en paralelo
+   - Combina resultados
+   - Archivo: app/utils/langraph/extraction_task.py (MODIFICAR)
+
+ARCHIVOS A CREAR:
+================
+
+1. app/utils/langraph/network_agent.py
+   - Clase: NetworkAnalysisAgent
+   - Prompt especializado en extracción de redes
+   - Métodos: extract_network(), create_network_prompt()
+
+2. app/schemas/networks.py
+   - StakeholderSchema
+   - RelationshipSchema
+   - TopicNetworkSchema
+   - NetworkAnalysisSchema (schema principal)
+
+ARCHIVOS A MODIFICAR:
+====================
+
+1. app/utils/langraph/extraction_task.py
+   - Importar NetworkAnalysisAgent
+   - Ejecutar ambos agentes en paralelo usando asyncio.gather()
+   - Combinar resultados en structured_insights
+
+2. app/schemas/insights.py
+   - Agregar campo network_analysis al ExtractedInsightSchemaExpanded
+
+3. app/api/endpoints/notes.py
+   - Mapear network_analysis en el endpoint de documentos
+
+4. Frontend: src/types/index.ts
+   - Agregar interfaces para NetworkAnalysis
+
+5. Frontend: src/components/ProcessedDocuments.tsx
+   - Mejorar visualización de red con datos reales
+
+SCHEMAS DETALLADOS:
+==================
+
+NetworkAnalysisSchema:
+{
+  "stakeholders": [
+    {
+      "name": "string",
+      "type": "funder|mentor|implementer|beneficiary|policymaker|organization",
+      "location": "string|null",
+      "context": "string",
+      "mentioned_frequency": "number"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "string",
+      "to": "string",
+      "type": "collaboration|funding|mentorship|policy|conflict|partnership",
+      "strength": "weak|moderate|strong",
+      "description": "string",
+      "evidence": "string" (cita del texto)
+    }
+  ],
+  "topic_networks": [
+    {
+      "topic": "string",
+      "connected_stakeholders": ["string"],
+      "pillar_alignment": "access_to_capital|ecosystem_support|mental_health|recognition|general",
+      "centrality": "high|medium|low"
+    }
+  ],
+  "geographic_clusters": [
+    {
+      "region": "string",
+      "stakeholders": ["string"],
+      "topics": ["string"]
+    }
+  ]
+}
+
+PROMPT ESPECIALIZADO PARA NETWORK AGENT:
+========================================
+
+ENFOQUE:
+- Identificar entidades (personas, organizaciones)
+- Detectar relaciones explícitas mencionadas en el texto
+- Clasificar tipos de stakeholders según contexto YSI
+- Extraer conexiones geográficas cuando se mencionen
+- Aplicar mismas reglas de seguridad (no fabricar información)
+
+REGLAS DE SEGURIDAD:
+- Solo relaciones EXPLÍCITAMENTE mencionadas
+- No inferir conexiones basadas en conocimiento general
+- Si no hay suficiente información de red, dejar campos vacíos
+- Cada relación debe tener evidencia textual
+
+FLUJO DE PROCESAMIENTO:
+======================
+
+1. Input: texto + contexto
+2. Ejecución paralela:
+   - InsightExtractionAgent → insights YSI + pilares
+   - NetworkAnalysisAgent → stakeholders + relaciones
+3. Combinación de resultados
+4. Output unificado con ambos análisis
+
+VENTAJAS:
+- Especialización clara de responsabilidades
+- Procesamiento más rápido (paralelo)
+- Prompts optimizados para cada tarea
+- Mantenimiento más fácil
+- Escalabilidad (se pueden agregar más agentes especializados)
+
+ORDEN DE IMPLEMENTACIÓN:
+=======================
+
+1. Crear schemas de red (networks.py)
+2. Crear NetworkAnalysisAgent (network_agent.py)
+3. Modificar extraction_task.py para procesamiento paralelo
+4. Actualizar schema principal de insights
+5. Actualizar endpoint de API
+6. Actualizar frontend types e interfaces
+7. Mejorar visualización de red en ProcessedDocuments
+8. Testing con contenido real
+
+CONSIDERACIONES TÉCNICAS:
+========================
+
+- Usar asyncio.gather() para paralelización
+- Mantener backward compatibility
+- Manejar errores independientemente por agente
+- Cachear resultados si es necesario
+- Logs separados para cada agente
+- Timeouts independientes
+
+TESTING:
+========
+
+- Casos con redes complejas
+- Casos con poca información de red
+- Casos sin stakeholders explícitos
+- Casos con múltiples tipos de relaciones
+- Validar que no se fabrican conexiones
+
+FIN DEL PLAN
+============

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: ysi-postgres-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ysi_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ysi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ysi_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ysi_user} -d ${POSTGRES_DB:-ysi_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ysi-backend:
+    build: 
+      context: ../
+      dockerfile: Dockerfile
+    container_name: ysi-backend-prod
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ysi_user}:${POSTGRES_PASSWORD:-ysi_password}@postgres:5432/${POSTGRES_DB:-ysi_db}
+      - SECRET_KEY=${SECRET_KEY:-ysi-production-secret-key-change-me}
+      - RAGFLOW_API_URL=${RAGFLOW_API_URL:-http://host.docker.internal:9380}
+      - RAGFLOW_WEB_URL=${RAGFLOW_WEB_URL:-http://host.docker.internal:9381}
+      - RAGFLOW_API_TOKEN=${RAGFLOW_API_TOKEN}
+      - RAGFLOW_TENANT_ID=${RAGFLOW_TENANT_ID}
+      - RAGFLOW_ENABLED=${RAGFLOW_ENABLED:-true}
+      - RAGFLOW_TIMEOUT=${RAGFLOW_TIMEOUT:-30}
+      - RAGFLOW_MAX_RETRIES=${RAGFLOW_MAX_RETRIES:-3}
+      - RAGFLOW_CHUNK_SIZE=${RAGFLOW_CHUNK_SIZE:-512}
+      - RAGFLOW_OVERLAP=${RAGFLOW_OVERLAP:-50}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:

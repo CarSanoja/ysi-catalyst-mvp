@@ -17,12 +17,23 @@ if (environmentConfig.name === 'development') {
 
 // Configuración del API con detección automática de entorno
 const API_CONFIG = {
-  BASE_URL: environmentConfig.apiUrl,
   TIMEOUT: 30000,
   HEADERS: {
     'Content-Type': 'application/json',
   },
 };
+
+// Get base URL dynamically to support runtime configuration changes
+function getBaseUrl(): string {
+  // Check for explicit environment variable first
+  const explicitApiUrl = import.meta.env.VITE_API_BASE_URL;
+  if (explicitApiUrl) {
+    return explicitApiUrl;
+  }
+
+  // Fallback to environment detection
+  return getEnvironmentConfig().apiUrl;
+}
 
 // Tipos de respuesta del API
 interface ApiResponse<T> {
@@ -49,7 +60,7 @@ async function apiRequest<T>(
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+    const response = await fetch(`${getBaseUrl()}${endpoint}`, {
       ...options,
       headers: {
         ...API_CONFIG.HEADERS,

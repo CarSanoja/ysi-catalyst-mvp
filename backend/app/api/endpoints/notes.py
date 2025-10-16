@@ -634,36 +634,36 @@ def update_document_insights(
                     current_result["opportunities"] = insights_updates.opportunities
                     changes_made.append("opportunities")
 
-        # Update meeting date
-        if update_data.meetingDate is not None:
-            old_meeting_date = current_result.get("meeting_date", "")
-            if old_meeting_date != update_data.meetingDate:
-                log_change(db, "text_processing_job", job_id, "meetingDate",
-                         old_meeting_date, update_data.meetingDate,
-                         update_data.changed_by, update_data.change_reason)
-                current_result["meeting_date"] = update_data.meetingDate
-                changes_made.append("meetingDate")
+            # Update meeting date
+            if insights_updates.meetingDate is not None:
+                old_meeting_date = current_result.get("meeting_date", "")
+                if old_meeting_date != insights_updates.meetingDate:
+                    log_change(db, "text_processing_job", job_id, "meetingDate",
+                             old_meeting_date, insights_updates.meetingDate,
+                             update_data.changed_by, update_data.change_reason)
+                    current_result["meeting_date"] = insights_updates.meetingDate
+                    changes_made.append("meetingDate")
 
-        # Update attending shapers
-        if update_data.attendingShapers is not None:
-            old_shapers = json.dumps(current_result.get("attending_shapers", []))
-            new_shapers = json.dumps(update_data.attendingShapers)
-            if old_shapers != new_shapers:
-                log_change(db, "text_processing_job", job_id, "attendingShapers",
-                         old_shapers, new_shapers,
-                         update_data.changed_by, update_data.change_reason)
-                current_result["attending_shapers"] = update_data.attendingShapers
-                changes_made.append("attendingShapers")
+            # Update attending shapers
+            if insights_updates.attendingShapers is not None:
+                old_shapers = json.dumps(current_result.get("attending_shapers", []))
+                new_shapers = json.dumps(insights_updates.attendingShapers)
+                if old_shapers != new_shapers:
+                    log_change(db, "text_processing_job", job_id, "attendingShapers",
+                             old_shapers, new_shapers,
+                             update_data.changed_by, update_data.change_reason)
+                    current_result["attending_shapers"] = insights_updates.attendingShapers
+                    changes_made.append("attendingShapers")
 
-        # Update Google Docs link
-        if update_data.googleDocsLink is not None:
-            old_link = current_result.get("google_docs_link", "")
-            if old_link != update_data.googleDocsLink:
-                log_change(db, "text_processing_job", job_id, "googleDocsLink",
-                         old_link, update_data.googleDocsLink,
-                         update_data.changed_by, update_data.change_reason)
-                current_result["google_docs_link"] = update_data.googleDocsLink
-                changes_made.append("googleDocsLink")
+            # Update Google Docs link
+            if insights_updates.googleDocsLink is not None:
+                old_link = current_result.get("google_docs_link", "")
+                if old_link != insights_updates.googleDocsLink:
+                    log_change(db, "text_processing_job", job_id, "googleDocsLink",
+                             old_link, insights_updates.googleDocsLink,
+                             update_data.changed_by, update_data.change_reason)
+                    current_result["google_docs_link"] = insights_updates.googleDocsLink
+                    changes_made.append("googleDocsLink")
 
         # Update the job result and timestamp
         if changes_made:

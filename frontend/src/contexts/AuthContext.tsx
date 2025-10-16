@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getBestApiUrl } from '../utils/environment';
 
 interface User {
   email: string;
@@ -19,8 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = 'http://localhost:8080/api/v1';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
@@ -34,7 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_URL}/auth/simple-login`, {
+      const apiUrl = await getBestApiUrl();
+      const response = await fetch(`${apiUrl}/auth/simple-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

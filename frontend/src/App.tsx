@@ -17,6 +17,12 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dashboardSubTab, setDashboardSubTab] = useState('shapers');
 
+  // Show login if not authenticated
+  if (!user) {
+    return <Login />;
+  }
+
+  // Only load data after authentication
   const { data: shapers, loading: shapersLoading, error: shapersError, refetch: refetchShapers } = useShapers();
   const { data: documents, loading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments();
 
@@ -25,11 +31,6 @@ function AppContent() {
   };
 
   const isReloading = shapersLoading || documentsLoading;
-
-  // Show login if not authenticated
-  if (!user) {
-    return <Login />;
-  }
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #ffffff, #E8F1F9)' }}>

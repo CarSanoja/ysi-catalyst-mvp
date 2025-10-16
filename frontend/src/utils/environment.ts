@@ -54,17 +54,17 @@ function getApiUrl(): string {
 
   // 2. Auto-detect based on environment
   if (isVercelEnvironment()) {
-    // Production deployment on Vercel - use AWS HTTP backend (simple)
-    return 'http://52.90.163.197:8080/api/v1';
+    // Production deployment on Vercel - use Cloudflare HTTPS tunnel
+    return 'https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1';
   }
 
   if (isLocalEnvironment()) {
-    // Local development - try local backend first, fallback to AWS
+    // Local development - try local backend first, fallback to Cloudflare
     return 'http://localhost:8080/api/v1';
   }
 
-  // 3. Default fallback to AWS HTTP backend
-  return 'http://52.90.163.197:8080/api/v1';
+  // 3. Default fallback to Cloudflare HTTPS tunnel
+  return 'https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1';
 }
 
 /**
@@ -126,14 +126,14 @@ export async function getBestApiUrl(): Promise<string> {
     console.info('🔗 Using local backend: http://localhost:8080/api/v1');
     return 'http://localhost:8080/api/v1';
   } else {
-    console.info('🔗 Local backend not available, using AWS HTTP backend: http://52.90.163.197:8080/api/v1');
-    return 'http://52.90.163.197:8080/api/v1';
+    console.info('🔗 Local backend not available, using Cloudflare HTTPS tunnel: https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1');
+    return 'https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1';
   }
 }
 
 /**
  * Gets API URL specifically for authentication endpoints
- * Uses HTTP for both local and production for simplicity
+ * Uses HTTPS via Cloudflare tunnel for production
  */
 export async function getBestAuthApiUrl(): Promise<string> {
   // For local development, try local backend first
@@ -144,14 +144,14 @@ export async function getBestAuthApiUrl(): Promise<string> {
       console.info('🔐 Using local HTTP backend for authentication: http://localhost:8080/api/v1');
       return 'http://localhost:8080/api/v1';
     } else {
-      console.info('🔐 Local backend not available, using AWS HTTP for auth');
-      return 'http://52.90.163.197:8080/api/v1';
+      console.info('🔐 Local backend not available, using Cloudflare HTTPS for auth');
+      return 'https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1';
     }
   }
 
-  // For production/Vercel, use HTTP to AWS backend (simple approach)
-  console.info('🔐 Using HTTP for authentication in production');
-  return 'http://52.90.163.197:8080/api/v1';
+  // For production/Vercel, use HTTPS via Cloudflare tunnel
+  console.info('🔐 Using HTTPS for authentication in production');
+  return 'https://bool-mic-acrylic-elliott.trycloudflare.com/api/v1';
 }
 
 /**

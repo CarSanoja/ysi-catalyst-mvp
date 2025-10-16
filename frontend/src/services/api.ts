@@ -1,13 +1,23 @@
 /**
  * YSI Platform API Service
- * 
+ *
  * Este servicio maneja todas las llamadas al backend.
- * Configurar BASE_URL según el entorno de despliegue.
+ * Detecta automáticamente el entorno y configura la URL correcta.
  */
 
-// Configuración del API
+import { getEnvironmentConfig, getBestApiUrl, logEnvironmentInfo } from '../utils/environment';
+
+// Initialize environment detection
+const environmentConfig = getEnvironmentConfig();
+
+// Log environment info in development
+if (environmentConfig.name === 'development') {
+  logEnvironmentInfo();
+}
+
+// Configuración del API con detección automática de entorno
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
+  BASE_URL: environmentConfig.apiUrl,
   TIMEOUT: 30000,
   HEADERS: {
     'Content-Type': 'application/json',

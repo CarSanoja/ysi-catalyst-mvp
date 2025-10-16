@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YSI Catalyst Backend - Simplified EC2 instance without Elastic IP'
+
+Parameters:
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of existing EC2 KeyPair for SSH access
+    Default: ysi-backend-key
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: EC2 instance type (t3.micro is free tier eligible)
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t2.micro
+      - t2.small
+
+  Environment:
+    Type: String
+    Default: production
+    Description: Environment name
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Resources:
+  # Security Group for Backend
+  BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for YSI Backend EC2 instance
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH access
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          Description: FastAPI backend
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-sg-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: YSI-Catalyst
+
+  # EC2 Instance
+  BackendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 AMI (us-east-1)
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref BackendSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y git python3 python3-pip nginx
+
+          # Install Docker
+          amazon-linux-extras install docker -y
+          systemctl start docker
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+
+          # Create application directory
+          mkdir -p /opt/ysi-backend
+          chown ec2-user:ec2-user /opt/ysi-backend
+
+          # Configure nginx as reverse proxy
+          cat > /etc/nginx/conf.d/ysi-backend.conf << 'EOF'
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+          EOF
+
+          # Start nginx
+          systemctl start nginx
+          systemctl enable nginx
+
+          # Signal completion
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource BackendInstance --region ${AWS::Region}
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: YSI-Catalyst
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10M
+        Count: 1
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the backend server
+    Value: !Ref BackendInstance
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
+
+  PublicIP:
+    Description: Public IP address of the backend server
+    Value: !GetAtt BackendInstance.PublicIp
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicIP'
+
+  BackendURL:
+    Description: Backend API URL
+    Value: !Sub 'http://${BackendInstance.PublicIp}:8080'
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendURL'
+
+  SSHCommand:
+    Description: SSH command to connect to the instance
+    Value: !Sub 'ssh -i ${KeyPairName}.pem ec2-user@${BackendInstance.PublicIp}'
+    Export:
+      Name: !Sub '${AWS::StackName}-SSHCommand'
+
+  SecurityGroupId:
+    Description: Security Group ID for the backend
+    Value: !Ref BackendSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'

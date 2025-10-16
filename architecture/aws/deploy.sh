@@ -36,6 +36,10 @@ if [ ! -f "$PARAMS_FILE" ]; then
   {
     "ParameterKey": "GitHubRepo",
     "ParameterValue": "https://github.com/CarSanoja/ysi-catalyst-mvp.git"
+  },
+  {
+    "ParameterKey": "CorsOrigins",
+    "ParameterValue": "http://localhost:3000,http://localhost:3001,http://localhost:8000,http://localhost:8080,http://localhost,https://bool-mic-acrylic-elliott.trycloudflare.com,https://ysi-catalyst-mvp.vercel.app,https://ysi-catalyst-mvp-git-main-carsanojas-projects.vercel.app"
   }
 ]
 PARAMS

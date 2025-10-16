@@ -170,6 +170,7 @@ DB_NAME=ysi_platform
 JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_TIME_MINUTES=10080
+BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3001","http://localhost:8000","http://localhost:8080","http://localhost","https://bool-mic-acrylic-elliott.trycloudflare.com","https://ysi-catalyst-mvp.vercel.app","https://ysi-catalyst-mvp-git-main-carsanojas-projects.vercel.app"]
 ENV_FILE
 
 sudo -u ec2-user docker-compose up -d

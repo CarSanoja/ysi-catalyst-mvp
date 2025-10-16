@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getBestApiUrl } from '../utils/environment';
+import { getBestAuthApiUrl } from '../utils/environment';
 
 interface User {
   email: string;
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const apiUrl = await getBestApiUrl();
+      const apiUrl = await getBestAuthApiUrl();
       const response = await fetch(`${apiUrl}/auth/simple-login`, {
         method: 'POST',
         headers: {

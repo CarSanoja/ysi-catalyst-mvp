@@ -132,6 +132,27 @@ export async function getBestApiUrl(): Promise<string> {
 }
 
 /**
+ * Gets API URL specifically for authentication endpoints
+ * Uses HTTP to avoid SSL certificate issues while keeping HTTPS for other endpoints
+ */
+export async function getBestAuthApiUrl(): Promise<string> {
+  // If local development, use the same logic as getBestApiUrl
+  if (isLocalEnvironment()) {
+    return await getBestApiUrl();
+  }
+
+  // For production/Vercel, use HTTP for auth to avoid SSL certificate issues
+  // This is temporary until proper SSL certificates are configured
+  if (isVercelEnvironment() || !isLocalEnvironment()) {
+    console.info('🔐 Using HTTP for authentication to avoid SSL certificate issues');
+    return 'http://52.90.163.197/api/v1';
+  }
+
+  // Fallback to standard API URL
+  return await getBestApiUrl();
+}
+
+/**
  * Log current environment information (for debugging)
  */
 export function logEnvironmentInfo(): void {
@@ -157,6 +178,7 @@ export function logEnvironmentInfo(): void {
 export default {
   getEnvironmentConfig,
   getBestApiUrl,
+  getBestAuthApiUrl,
   checkLocalBackend,
   logEnvironmentInfo,
   isLocal: isLocalEnvironment(),

@@ -54,8 +54,8 @@ function getApiUrl(): string {
 
   // 2. Auto-detect based on environment
   if (isVercelEnvironment()) {
-    // Production deployment on Vercel - use AWS backend
-    return 'http://52.90.163.197:8080/api/v1';
+    // Production deployment on Vercel - use AWS HTTPS backend
+    return 'https://52.90.163.197/api/v1';
   }
 
   if (isLocalEnvironment()) {
@@ -63,8 +63,8 @@ function getApiUrl(): string {
     return 'http://localhost:8080/api/v1';
   }
 
-  // 3. Default fallback to AWS backend
-  return 'http://52.90.163.197:8080/api/v1';
+  // 3. Default fallback to AWS HTTPS backend
+  return 'https://52.90.163.197/api/v1';
 }
 
 /**
@@ -126,8 +126,8 @@ export async function getBestApiUrl(): Promise<string> {
     console.info('🔗 Using local backend: http://localhost:8080/api/v1');
     return 'http://localhost:8080/api/v1';
   } else {
-    console.info('🔗 Local backend not available, using AWS backend: http://52.90.163.197:8080/api/v1');
-    return 'http://52.90.163.197:8080/api/v1';
+    console.info('🔗 Local backend not available, using AWS HTTPS backend: https://52.90.163.197/api/v1');
+    return 'https://52.90.163.197/api/v1';
   }
 }
 

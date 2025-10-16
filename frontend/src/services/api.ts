@@ -287,7 +287,7 @@ export const notesApi = {
     text: string;
     context?: string;
   }) => {
-    return apiRequest<ApiResponse<any>>('/notes/process/', {
+    return apiRequest<ApiResponse<any>>('/notes/process', {
       method: 'POST',
       body: JSON.stringify(notesData),
     });

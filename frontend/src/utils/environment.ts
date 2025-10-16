@@ -133,23 +133,27 @@ export async function getBestApiUrl(): Promise<string> {
 
 /**
  * Gets API URL specifically for authentication endpoints
- * Uses HTTP to avoid SSL certificate issues while keeping HTTPS for other endpoints
+ * Uses HTTP only for local development to avoid Mixed Content errors in production
  */
 export async function getBestAuthApiUrl(): Promise<string> {
-  // If local development, use the same logic as getBestApiUrl
+  // For local development, try HTTP first to avoid SSL certificate issues
   if (isLocalEnvironment()) {
-    return await getBestApiUrl();
+    // Check if local backend is available
+    const localBackendAvailable = await checkLocalBackend();
+
+    if (localBackendAvailable) {
+      console.info('🔐 Using local HTTP backend for authentication: http://localhost:8080/api/v1');
+      return 'http://localhost:8080/api/v1';
+    } else {
+      console.info('🔐 Local backend not available, using AWS HTTPS for auth (SSL warnings expected)');
+      return 'https://52.90.163.197/api/v1';
+    }
   }
 
-  // For production/Vercel, use HTTP for auth to avoid SSL certificate issues
-  // This is temporary until proper SSL certificates are configured
-  if (isVercelEnvironment() || !isLocalEnvironment()) {
-    console.info('🔐 Using HTTP for authentication to avoid SSL certificate issues');
-    return 'http://52.90.163.197/api/v1';
-  }
-
-  // Fallback to standard API URL
-  return await getBestApiUrl();
+  // For production/Vercel, must use HTTPS to avoid Mixed Content errors
+  // Accept SSL certificate warnings in production
+  console.info('🔐 Using HTTPS for authentication in production (SSL certificate warnings expected)');
+  return 'https://52.90.163.197/api/v1';
 }
 
 /**

@@ -23,16 +23,10 @@ const API_CONFIG = {
   },
 };
 
-// Get base URL dynamically to support runtime configuration changes
-function getBaseUrl(): string {
-  // Check for explicit environment variable first
-  const explicitApiUrl = import.meta.env.VITE_API_BASE_URL;
-  if (explicitApiUrl) {
-    return explicitApiUrl;
-  }
-
-  // Fallback to environment detection
-  return getEnvironmentConfig().apiUrl;
+// Get base URL dynamically using the same logic as authentication
+async function getBaseUrl(): Promise<string> {
+  // Use the same intelligent API URL detection as the login system
+  return await getBestApiUrl();
 }
 
 // Tipos de respuesta del API
@@ -60,7 +54,8 @@ async function apiRequest<T>(
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
   try {
-    const response = await fetch(`${getBaseUrl()}${endpoint}`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers: {
         ...API_CONFIG.HEADERS,

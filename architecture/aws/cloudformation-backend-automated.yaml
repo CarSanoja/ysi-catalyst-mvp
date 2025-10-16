@@ -1,0 +1,515 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'YSI Backend Infrastructure - Fully Automated'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues: ['development', 'staging', 'production']
+    Description: 'Environment name'
+
+  InstanceType:
+    Type: String
+    Default: 't3.micro'
+    AllowedValues: ['t3.micro', 't3.small', 't3.medium']
+    Description: 'EC2 Instance Type'
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 32
+    Default: 'YsiAdmin2024!'
+    Description: 'Master password for MySQL database'
+
+  GitHubRepo:
+    Type: String
+    Default: 'https://github.com/CarSanoja/ysi-catalyst-mvp.git'
+    Description: 'GitHub repository URL'
+
+Resources:
+  # VPC Configuration
+  YSIBackendVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-vpc-${Environment}'
+
+  # Internet Gateway
+  YSIBackendIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-igw-${Environment}'
+
+  YSIBackendIGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref YSIBackendVPC
+      InternetGatewayId: !Ref YSIBackendIGW
+
+  # Public Subnet
+  YSIBackendPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YSIBackendVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-public-subnet-${Environment}'
+
+  # Private Subnet for RDS
+  YSIBackendPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YSIBackendVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-private-subnet-1-${Environment}'
+
+  YSIBackendPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref YSIBackendVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-private-subnet-2-${Environment}'
+
+  # Route Table
+  YSIBackendRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref YSIBackendVPC
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-route-table-${Environment}'
+
+  YSIBackendPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: YSIBackendIGWAttachment
+    Properties:
+      RouteTableId: !Ref YSIBackendRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref YSIBackendIGW
+
+  YSIBackendSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref YSIBackendPublicSubnet
+      RouteTableId: !Ref YSIBackendRouteTable
+
+  # Security Groups
+  YSIBackendWebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for YSI Backend web server'
+      VpcId: !Ref YSIBackendVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-web-sg-${Environment}'
+
+  YSIBackendDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group for YSI Backend database'
+      VpcId: !Ref YSIBackendVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref YSIBackendWebSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-db-sg-${Environment}'
+
+  # DB Subnet Group
+  YSIBackendDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'Subnet group for YSI Backend database'
+      SubnetIds:
+        - !Ref YSIBackendPrivateSubnet1
+        - !Ref YSIBackendPrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-db-subnet-group-${Environment}'
+
+  # RDS Database Instance
+  YSIBackendDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub 'ysi-db-${Environment}'
+      DBName: 'ysi_platform'
+      Engine: 'mysql'
+      EngineVersion: '8.0.35'
+      DBInstanceClass: 'db.t3.micro'
+      AllocatedStorage: 20
+      StorageType: 'gp2'
+      StorageEncrypted: true
+      MasterUsername: 'admin'
+      MasterUserPassword: !Ref DBPassword
+      VPCSecurityGroups:
+        - !Ref YSIBackendDBSecurityGroup
+      DBSubnetGroupName: !Ref YSIBackendDBSubnetGroup
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      PubliclyAccessible: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-db-${Environment}'
+
+  # IAM Role for EC2
+  YSIBackendInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: YSIBackendInstancePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  YSIBackendInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref YSIBackendInstanceRole
+
+  # Key Pair
+  YSIBackendKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub 'ysi-backend-key-${Environment}'
+      KeyType: 'rsa'
+      KeyFormat: 'pem'
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-key-${Environment}'
+
+  # EC2 Instance
+  YSIBackendInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: YSIBackendDatabase
+    Properties:
+      ImageId: ami-0e54eba7c51c234f6  # Amazon Linux 2 AMI (us-east-1)
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref YSIBackendKeyPair
+      SecurityGroupIds:
+        - !Ref YSIBackendWebSecurityGroup
+      SubnetId: !Ref YSIBackendPublicSubnet
+      IamInstanceProfile: !Ref YSIBackendInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+
+          # Set up logging
+          exec > >(tee /var/log/ysi-setup.log)
+          exec 2>&1
+
+          echo "========================================="
+          echo "YSI Backend EC2 Setup Script"
+          echo "Started at: $(date)"
+          echo "========================================="
+
+          # Update system
+          echo "[1/10] Updating system packages..."
+          yum update -y
+
+          # Install Docker
+          echo "[2/10] Installing Docker..."
+          yum install -y docker
+          service docker start
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+
+          # Install Docker Compose
+          echo "[3/10] Installing Docker Compose..."
+          curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+
+          # Install Git
+          echo "[4/10] Installing Git..."
+          yum install -y git
+
+          # Install nginx
+          echo "[5/10] Installing nginx..."
+          amazon-linux-extras install nginx1 -y
+
+          # Install Python and MySQL client
+          echo "[6/10] Installing Python 3.11 and dependencies..."
+          yum install -y python3.11 python3-pip mysql
+
+          # Install Cloudflared
+          echo "[7/10] Installing Cloudflared..."
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
+          chmod +x /tmp/cloudflared
+          mv /tmp/cloudflared /usr/local/bin/
+
+          # Configure nginx
+          echo "[8/10] Configuring nginx..."
+          mkdir -p /etc/nginx/ssl
+
+          # Generate self-signed certificate
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+              -keyout /etc/nginx/ssl/nginx-selfsigned.key \
+              -out /etc/nginx/ssl/nginx-selfsigned.crt \
+              -subj "/C=US/ST=State/L=City/O=YSI/CN=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+
+          # nginx HTTP config (port 80)
+          cat <<'NGINX_HTTP' > /etc/nginx/conf.d/ysi-backend-http.conf
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+
+                  add_header 'Access-Control-Allow-Origin' '*' always;
+                  add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+                  add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+                  add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+                  if (\$request_method = 'OPTIONS') {
+                      add_header 'Access-Control-Allow-Origin' '*';
+                      add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+                      add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                      add_header 'Access-Control-Max-Age' 1728000;
+                      add_header 'Content-Type' 'text/plain; charset=utf-8';
+                      add_header 'Content-Length' 0;
+                      return 204;
+                  }
+              }
+          }
+          NGINX_HTTP
+
+          # nginx config (port 8080)
+          cat <<'NGINX_8080' > /etc/nginx/conf.d/ysi-backend-port8080.conf
+          server {
+              listen 8080;
+              server_name _;
+
+              location / {
+                  proxy_pass http://localhost:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+
+                  add_header 'Access-Control-Allow-Origin' '*' always;
+                  add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+                  add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+                  add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+                  if (\$request_method = 'OPTIONS') {
+                      add_header 'Access-Control-Allow-Origin' '*';
+                      add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+                      add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                      add_header 'Access-Control-Max-Age' 1728000;
+                      add_header 'Content-Type' 'text/plain; charset=utf-8';
+                      add_header 'Content-Length' 0;
+                      return 204;
+                  }
+              }
+          }
+          NGINX_8080
+
+          # Start and enable nginx
+          nginx -t
+          systemctl start nginx
+          systemctl enable nginx
+
+          # Clone repository and start backend
+          echo "[9/10] Setting up backend application..."
+          cd /home/ec2-user
+          git clone ${GitHubRepo} ysi-backend
+          cd ysi-backend/backend
+
+          # Create .env file
+          cat <<ENV_FILE > .env
+          DB_HOST=${YSIBackendDatabase.Endpoint.Address}
+          DB_PORT=3306
+          DB_USER=admin
+          DB_PASSWORD=${DBPassword}
+          DB_NAME=ysi_platform
+          JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
+          JWT_ALGORITHM=HS256
+          JWT_EXPIRATION_TIME_MINUTES=10080
+          ENV_FILE
+
+          # Start backend
+          chown -R ec2-user:ec2-user /home/ec2-user/ysi-backend
+          sudo -u ec2-user docker-compose up -d
+
+          # Create systemd service for backend
+          cat <<'DOCKER_SERVICE' > /etc/systemd/system/ysi-backend.service
+          [Unit]
+          Description=YSI Backend Docker Compose Application
+          After=docker.service
+          Requires=docker.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory=/home/ec2-user/ysi-backend/backend
+          ExecStart=/usr/local/bin/docker-compose up -d
+          ExecStop=/usr/local/bin/docker-compose down
+          TimeoutStartSec=0
+          StandardOutput=journal
+          User=ec2-user
+
+          [Install]
+          WantedBy=multi-user.target
+          DOCKER_SERVICE
+
+          systemctl daemon-reload
+          systemctl enable ysi-backend.service
+
+          # Create Cloudflare tunnel service
+          echo "[10/10] Setting up Cloudflare tunnel..."
+          mkdir -p /var/lib/cloudflared
+
+          cat <<'CLOUDFLARED_SERVICE' > /etc/systemd/system/cloudflared-tunnel.service
+          [Unit]
+          Description=Cloudflare Tunnel
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:8080 --no-autoupdate
+          Restart=always
+          RestartSec=10
+          StandardOutput=journal
+          StandardError=journal
+
+          [Install]
+          WantedBy=multi-user.target
+          CLOUDFLARED_SERVICE
+
+          systemctl daemon-reload
+          systemctl enable cloudflared-tunnel.service
+          systemctl start cloudflared-tunnel.service
+
+          # Setup complete
+          echo "========================================="
+          echo "Setup Complete!"
+          echo "Finished at: $(date)"
+          echo "========================================="
+          echo ""
+          echo "Services Status:" >> /var/log/ysi-setup.log
+          systemctl status nginx --no-pager | head -n 3 >> /var/log/ysi-setup.log
+          systemctl status docker --no-pager | head -n 3 >> /var/log/ysi-setup.log
+          systemctl status ysi-backend --no-pager | head -n 3 >> /var/log/ysi-setup.log
+          systemctl status cloudflared-tunnel --no-pager | head -n 3 >> /var/log/ysi-setup.log
+          echo ""
+          echo "To get the Cloudflare tunnel URL, run:"
+          echo "sudo journalctl -u cloudflared-tunnel -n 50 | grep trycloudflare"
+          echo ""
+          echo "========================================="
+
+          # Signal CloudFormation that setup is complete
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource YSIBackendInstance --region ${AWS::Region}
+
+      Tags:
+        - Key: Name
+          Value: !Sub 'ysi-backend-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT15M
+
+Outputs:
+  InstanceId:
+    Description: 'EC2 Instance ID'
+    Value: !Ref YSIBackendInstance
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
+
+  PublicIP:
+    Description: 'Public IP address of the instance'
+    Value: !GetAtt YSIBackendInstance.PublicIp
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicIP'
+
+  DatabaseEndpoint:
+    Description: 'RDS MySQL database endpoint'
+    Value: !GetAtt YSIBackendDatabase.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DatabaseEndpoint'
+
+  HTTPEndpoint:
+    Description: 'HTTP endpoint'
+    Value: !Sub 'http://${YSIBackendInstance.PublicIp}:8080/api/v1'
+
+  HTTPSEndpoint:
+    Description: 'HTTPS endpoint (self-signed certificate)'
+    Value: !Sub 'https://${YSIBackendInstance.PublicIp}/api/v1'
+
+  CloudflareCommand:
+    Description: 'Command to get Cloudflare tunnel URL'
+    Value: !Sub 'ssh -i ${YSIBackendKeyPair}.pem ec2-user@${YSIBackendInstance.PublicIp} "sudo journalctl -u cloudflared-tunnel -n 50 | grep trycloudflare"'
+
+  SSHCommand:
+    Description: 'SSH command to connect to instance'
+    Value: !Sub 'ssh -i ${YSIBackendKeyPair}.pem ec2-user@${YSIBackendInstance.PublicIp}'

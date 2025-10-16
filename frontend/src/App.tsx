@@ -17,14 +17,14 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dashboardSubTab, setDashboardSubTab] = useState('shapers');
 
+  // Load data hooks (always called to maintain consistent hook order)
+  const { data: shapers, loading: shapersLoading, error: shapersError, refetch: refetchShapers } = useShapers({ enabled: !!user });
+  const { data: documents, loading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments(undefined, { enabled: !!user });
+
   // Show login if not authenticated
   if (!user) {
     return <Login />;
   }
-
-  // Only load data after authentication
-  const { data: shapers, loading: shapersLoading, error: shapersError, refetch: refetchShapers } = useShapers();
-  const { data: documents, loading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments();
 
   const handleReloadData = async () => {
     await Promise.all([refetchShapers(), refetchDocuments()]);

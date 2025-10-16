@@ -225,28 +225,28 @@ import { api } from '../services/api';
 /**
  * Hook para obtener todos los Global Shapers
  */
-export function useShapers() {
+export function useShapers(options: { enabled?: boolean } = {}) {
   return useQuery('shapers', async () => {
     const response = await api.shapers.getAll();
     if (!response.success) {
       throw new Error(response.error || 'Error loading shapers');
     }
     return response.data;
-  });
+  }, options);
 }
 
 /**
  * Hook para obtener documentos con filtros opcionales
  * Ahora usa el endpoint unificado que incluye jobs de procesamiento completados
  */
-export function useDocuments(filters?: any) {
+export function useDocuments(filters?: any, options: { enabled?: boolean } = {}) {
   return useQuery(`documents-${JSON.stringify(filters || {})}`, async () => {
     const response = await api.documents.getAllFromJobs(filters);
     if (!response.success) {
       throw new Error(response.error || 'Error loading documents');
     }
     return response.data;
-  });
+  }, options);
 }
 
 /**

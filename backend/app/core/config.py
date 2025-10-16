@@ -24,6 +24,7 @@ class Settings(BaseSettings):
         "https://bool-mic-acrylic-elliott.trycloudflare.com",  # Cloudflare tunnel
         "https://ysi-catalyst-mvp.vercel.app",  # Vercel production
         "https://ysi-catalyst-mvp-git-main-carsanojas-projects.vercel.app",  # Vercel preview deployments
+        "https://ysi15.vercel.app",  # Additional Vercel deployment
     ]
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)

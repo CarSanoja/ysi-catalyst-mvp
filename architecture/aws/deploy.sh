@@ -39,7 +39,7 @@ if [ ! -f "$PARAMS_FILE" ]; then
   },
   {
     "ParameterKey": "CorsOrigins",
-    "ParameterValue": "http://localhost:3000,http://localhost:3001,http://localhost:8000,http://localhost:8080,http://localhost,https://bool-mic-acrylic-elliott.trycloudflare.com,https://ysi-catalyst-mvp.vercel.app,https://ysi-catalyst-mvp-git-main-carsanojas-projects.vercel.app"
+    "ParameterValue": "http://localhost:3000,http://localhost:3001,http://localhost:8000,http://localhost:8080,http://localhost,https://bool-mic-acrylic-elliott.trycloudflare.com,https://ysi-catalyst-mvp.vercel.app,https://ysi-catalyst-mvp-git-main-carsanojas-projects.vercel.app,https://ysi15.vercel.app"
   }
 ]
 PARAMS
